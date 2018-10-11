@@ -110,6 +110,16 @@ const NodeList = function(node) {
   return node.children.map(child => this.node(child)).join('');
 };
 
+const Filter = function(node) {
+    const name = this.filterAliasMap[node.name.value] || node.name.value;
+    return [
+        name,
+        '(',
+        node.args.children.map(arg => this.node(arg)).join(', '),
+        ')'
+    ].join('');
+};
+
 const Not = function(node) {
   return [
       this.K_NOT,

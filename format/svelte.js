@@ -38,6 +38,7 @@ const If = function(node) {
 const _chomp = function(node) {
   switch (node.type) {
     case "Symbol":
+    case "Array":
       this._context.unshift(node.value);
       break;
 
@@ -63,6 +64,7 @@ const _chomp = function(node) {
 const _spit = function(node) {
   switch (node.type) {
     case "Symbol":
+    case "Array":
       this._context.shift();
       break;
 
@@ -74,25 +76,28 @@ const _spit = function(node) {
 };
 
 const For = function(node) {
-  // console.log(openBlock.join(""));
-  const parts = [
-    "{#each ",
-    this.node(node.arr),
-    "as ",
-    node.name,
-    "}",
-    this.node(node.body)
-  ];
-  console.log(parts);
-  // parts.push("{/each}");
+  const arrName = this.node(node.arr);
+  let name = this.node(node.name);
+  if (name.includes(" ")) {
+    name = `{ ${name.split(" ").join(",")} }`;
+  }
+  const parts = ["{#each ", arrName, " as ", name, "}"];
+  parts.push(this.node(node.body));
+  parts.push("{/each}");
 
   return parts.join("");
 };
 
-const Symbol = function(node) {
-  const value = node.value;
-  return this.P_IDENTIFIER.test(value) ? value : "[" + value + "]";
+const Filter = function(node) {
+  const name = this.filterAliasMap[node.name.value] || node.name.value;
+  return [
+    name,
+    "(",
+    node.args.children.map(arg => this.node(arg)).join(", "),
+    ")"
+  ].join("");
 };
+
 /**
  * @return {string}
  */
@@ -165,6 +170,10 @@ const accessor = function(symbol) {
   return this.P_IDENTIFIER.test(symbol) ? "." + symbol : ".[" + symbol + "]";
 };
 
+const NodeList = function(node) {
+  return node.children.map(child => this.node(child)).join(" ");
+};
+
 module.exports = formatFactory({
   WS: "",
 
@@ -192,8 +201,21 @@ module.exports = formatFactory({
 
   P_NUMERIC: abs.P_NUMERIC,
   P_WORD: abs.P_WORD,
+  P_IDENTIFIER: /^[a-z]\w*$/i,
+
+  _chomp: _chomp,
+  _spit: _spit,
+
+  filterAliasMap: {
+    safe: "raw"
+  },
+
+  literalAliases: {
+    null: "nil"
+  },
 
   // abstract word quoting helper
+  Array: NodeList,
   quote: abs.quote,
   accessor: abs.accessor,
   Block: abs.Block,
@@ -201,6 +223,7 @@ module.exports = formatFactory({
   Compare: abs.Compare,
   Extends: abs.Extends,
   For: For,
+  Filter: Filter,
   Group: abs.Group,
   If: abs.If,
   InlineIf: abs.If,
