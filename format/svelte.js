@@ -74,13 +74,17 @@ const _spit = function(node) {
 };
 
 const For = function(node) {
-  this._chomp(node.name);
-
-  const parts = ["{#each ", this.node(node.arr), "}", this.node(node.body)];
-
-  this._spit(node.name);
-
-  parts.push("{/each}");
+  // console.log(openBlock.join(""));
+  const parts = [
+    "{#each ",
+    this.node(node.arr),
+    "as ",
+    node.name,
+    "}",
+    this.node(node.body)
+  ];
+  console.log(parts);
+  // parts.push("{/each}");
 
   return parts.join("");
 };
@@ -93,9 +97,12 @@ const Symbol = function(node) {
  * @return {string}
  */
 const Macro = function(node) {
-  const fileName = node.body.children.find(child => {
-    return child.template;
-  }).template.value;
+  const fileName = node.body.children
+    .find(child => {
+      return child.template;
+    })
+    .template.value.replace(/\.[^\.]+$/, ".html");
+
   const componentName = node.name.value;
 
   const scriptTag = `
@@ -113,12 +120,9 @@ const Macro = function(node) {
     </script>
     `;
 
-  let parts = [
-    `<${node.name.value}`,
-    ` {${{ ...node.args }}}`,
-    `/>`,
-    scriptTag
-  ];
+  const params = this.node(node.args);
+
+  let parts = [`<${componentName}`, ` {${params}} `, `/>`, scriptTag];
 
   return parts.join("");
 };
@@ -171,7 +175,7 @@ module.exports = formatFactory({
   C_CLOSE: "}",
   // for parity with other templating systems,
   // output should *not* be HTML-escaped (double curlies)
-  O_OPEN: "{@html",
+  O_OPEN: "{",
   O_CLOSE: "}",
 
   K_IF: "#if ",
@@ -181,15 +185,13 @@ module.exports = formatFactory({
 
   K_EACH: "#each ",
   K_END_EACH: "/each",
+  K_FOR: "#each ",
 
   // current symbol context
   _context: [],
 
-  // regex matching bare words (not requiring quotes)
-  P_IDENTIFIER: /^[a-z]\w*$/i,
-
-  // regex matching bare words (not requiring quotes)
-  P_WORD: /^[a-z]\w*$/i,
+  P_NUMERIC: abs.P_NUMERIC,
+  P_WORD: abs.P_WORD,
 
   // abstract word quoting helper
   quote: abs.quote,
@@ -198,9 +200,10 @@ module.exports = formatFactory({
   Capture: abs.Capture,
   Compare: abs.Compare,
   Extends: abs.Extends,
-  For: abs.For,
+  For: For,
   Group: abs.Group,
   If: abs.If,
+  InlineIf: abs.If,
   Include: abs.Include,
   Literal: abs.Literal,
   LookupVal: abs.LookupVal,
