@@ -1,6 +1,6 @@
-'use strict';
-const formatFactory = require('./factory');
-const aliases = require('./aliases');
+"use strict";
+const formatFactory = require("./factory");
+const aliases = require("./aliases");
 
 const getFormat = function(name, overrides) {
   if (name in aliases) {
@@ -9,14 +9,14 @@ const getFormat = function(name, overrides) {
 
   var fmt;
   try {
-    fmt = require('./' + name);
+    fmt = require("./" + name);
   } catch (error) {
     throw new Error("No such format: '" + name + "'");
   }
   return overrides ? fmt.extend(overrides) : fmt;
 };
 
-const nunjucks = require('./nunjucks');
+const nunjucks = require("./nunjucks");
 
 module.exports = {
   get: getFormat,
@@ -24,10 +24,11 @@ module.exports = {
   aliases: aliases,
   defaultFormat: nunjucks,
   nunjucks: nunjucks,
-  liquid: require('./liquid'),
-  jekyll: require('./jekyll'),
-  jinja: require('./jinja'),
-  handlebars: require('./handlebars'),
-  php: require('./php'),
-  erb: require('./erb'),
+  liquid: require("./liquid"),
+  jekyll: require("./jekyll"),
+  jinja: require("./jinja"),
+  handlebars: require("./handlebars"),
+  php: require("./php"),
+  erb: require("./erb"),
+  svelte: require("./svelte")
 };
